@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SANDBOX_ORGANIZATIONS, sandboxUsers, SANDBOX_DOCUMENTS, SANDBOX_SECURITY_SETTINGS, SEED_IDS, sandboxDocId, sandboxSettingId } from '@/lib/sandbox/seed-data'
+import { SANDBOX_ORGANIZATIONS, sandboxUsers, SANDBOX_DOCUMENTS, SANDBOX_SECURITY_SETTINGS, SEED_IDS, sandboxDocId, sandboxSettingId, sandboxAuditEventId, sandboxAuditEvents } from '@/lib/sandbox/seed-data'
 
 describe('sandbox seed data', () => {
   it('exports deterministic SEED_IDS', () => {
@@ -36,6 +36,33 @@ describe('sandbox seed data', () => {
 
   it('generates deterministic setting IDs', () => {
     expect(sandboxSettingId('org_luntian', 'mfa_enabled')).toBe('setting_org_luntian_mfa_enabled')
+  })
+
+  it('generates deterministic audit event IDs', () => {
+    expect(sandboxAuditEventId('org_luntian', 0)).toBe('audit_seed_org_luntian_0')
+  })
+
+  it('has 4 seed audit events (one per org)', () => {
+    expect(sandboxAuditEvents()).toHaveLength(4)
+  })
+
+  it('seed audit events have computed hash chains', () => {
+    const events = sandboxAuditEvents()
+    for (const event of events) {
+      expect(event.eventHash).toBeTruthy()
+      expect(event.canonicalPayload).toBeTruthy()
+      expect(typeof event.eventHash).toBe('string')
+      expect(event.eventHash).toMatch(/^[a-f0-9]{64}$/)
+    }
+  })
+
+  it('seed audit events reference existing orgs and users', () => {
+    const orgIds = SANDBOX_ORGANIZATIONS.map(o => o.id)
+    const userIds = sandboxUsers().map(u => u.id)
+    for (const event of sandboxAuditEvents()) {
+      expect(orgIds).toContain(event.organizationId)
+      if (event.actorUserId) expect(userIds).toContain(event.actorUserId)
+    }
   })
 
   it('users have deterministic IDs matching SEED_IDS', () => {

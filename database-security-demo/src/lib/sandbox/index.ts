@@ -3,7 +3,7 @@ import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { createClient } from '@libsql/client'
 import fs from 'fs'
 import path from 'path'
-import { SANDBOX_ORGANIZATIONS, sandboxUsers, SANDBOX_DOCUMENTS, SANDBOX_SECURITY_SETTINGS, sandboxDocId, sandboxSettingId } from './seed-data'
+import { SANDBOX_ORGANIZATIONS, sandboxUsers, SANDBOX_DOCUMENTS, SANDBOX_SECURITY_SETTINGS, sandboxDocId, sandboxSettingId, sandboxAuditEvents } from './seed-data'
 
 let sandboxInitPromise: Promise<PrismaClient> | null = null
 
@@ -58,6 +58,30 @@ async function seedSandbox(raw: ReturnType<typeof createClient>) {
   }
 }
 
+async function seedSandboxAuditEvents(client: PrismaClient) {
+  const events = sandboxAuditEvents()
+  for (const event of events) {
+    await (client as any).auditEvent.create({
+      data: {
+        id: event.id,
+        action: event.action,
+        outcome: event.outcome,
+        entityType: event.entityType,
+        entityId: event.entityId,
+        userId: event.actorUserId,
+        organizationId: event.organizationId,
+        metadata: event.metadata,
+        ipAddress: event.ipAddress,
+        causationId: event.causationId,
+        previousHash: event.previousHash,
+        eventHash: event.eventHash,
+        canonicalPayload: event.canonicalPayload,
+        createdAt: event.createdAt,
+      },
+    })
+  }
+}
+
 export async function initSandbox(): Promise<PrismaClient> {
   const dbPath = sandboxDbPath()
   if (fs.existsSync(dbPath)) {
@@ -76,7 +100,8 @@ export async function initSandbox(): Promise<PrismaClient> {
     const dir = sandboxDir()
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
 
-    if (!fs.existsSync(dbPath)) {
+    const isFreshDb = !fs.existsSync(dbPath)
+    if (isFreshDb) {
       const raw = createClient({ url: `file:${dbPath}` })
       await ensureSchema(raw)
       await seedSandbox(raw)
@@ -87,6 +112,11 @@ export async function initSandbox(): Promise<PrismaClient> {
     const adapter = new PrismaLibSql({ url: `file:${dbPath}` })
     const client = new PrismaClient({ adapter })
     g.sandboxPrisma = client
+
+    if (isFreshDb) {
+      await seedSandboxAuditEvents(client)
+    }
+
     return client
   })()
 

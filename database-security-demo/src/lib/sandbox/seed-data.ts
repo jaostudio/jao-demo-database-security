@@ -1,5 +1,8 @@
+import { createHash } from 'node:crypto'
 import bcrypt from 'bcryptjs'
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '@/lib/demo-accounts'
+import { AuditActions } from '@/lib/audit-actions'
+import { stableJson } from '@/lib/audit/stable-json'
 
 export const SEED_IDS = {
   orgs: {
@@ -66,3 +69,122 @@ export const SANDBOX_SECURITY_SETTINGS = [
   { key: 'mfa_enabled', value: 'true' },
   { key: 'session_timeout_minutes', value: '60' },
 ]
+
+export type SeedAuditEvent = {
+  id: string
+  action: string
+  outcome: string
+  entityType: string
+  entityId: string
+  actorUserId: string | null
+  organizationId: string
+  ipAddress: string | null
+  metadata: string
+  causationId: string | null
+  previousHash: string | null
+  eventHash: string
+  canonicalPayload: string
+  createdAt: Date
+}
+
+export function sandboxAuditEventId(orgId: string, idx: number): string {
+  return `audit_seed_${orgId}_${idx}`
+}
+
+export function sandboxAuditEvents(): SeedAuditEvent[] {
+  const raw: {
+    action: string
+    outcome: string
+    entityType: string
+    entityId: string
+    actorUserId: string | null
+    organizationId: string
+    ipAddress: string | null
+    metadata: Record<string, unknown>
+    causationId: string | null
+  }[] = [
+    {
+      action: AuditActions.AUTH_LOGIN_SUCCESS,
+      outcome: 'SUCCESS',
+      entityType: 'auth',
+      entityId: '',
+      actorUserId: SEED_IDS.users.jao,
+      organizationId: SEED_IDS.orgs.luntian,
+      ipAddress: '127.0.0.1',
+      metadata: { reason: 'seed_data_initialized', source: 'sandbox' },
+      causationId: 'seed_causation_luntian',
+    },
+    {
+      action: AuditActions.SECURITY_SETTINGS_UPDATED,
+      outcome: 'SUCCESS',
+      entityType: 'security_setting',
+      entityId: '',
+      actorUserId: SEED_IDS.users.gina,
+      organizationId: SEED_IDS.orgs.talapay,
+      ipAddress: '127.0.0.1',
+      metadata: { setting: 'mfa_enabled', action: 'seed_data_initialized', source: 'sandbox' },
+      causationId: 'seed_causation_talapay',
+    },
+    {
+      action: AuditActions.DOCUMENT_CREATED,
+      outcome: 'SUCCESS',
+      entityType: 'document',
+      entityId: sandboxDocId(0),
+      actorUserId: SEED_IDS.users.kiko,
+      organizationId: SEED_IDS.orgs.bayani,
+      ipAddress: '127.0.0.1',
+      metadata: { title: SANDBOX_DOCUMENTS[0].title, source: 'seed_data' },
+      causationId: 'seed_causation_bayani',
+    },
+    {
+      action: AuditActions.ADMIN_USER_CREATED,
+      outcome: 'SUCCESS',
+      entityType: 'user',
+      entityId: SEED_IDS.users.grace,
+      actorUserId: SEED_IDS.users.grace,
+      organizationId: SEED_IDS.orgs.pulodata,
+      ipAddress: '127.0.0.1',
+      metadata: { email: DEMO_ACCOUNTS[3].email, role: 'SYSTEM_ADMIN', source: 'seed_data' },
+      causationId: 'seed_causation_pulodata',
+    },
+  ]
+
+  const createdAt = new Date('2025-01-01T00:00:00Z')
+  let previousHash: string | null = null
+  let eventHash = ''
+
+  return raw.map((e) => {
+    const canonicalPayload = stableJson({
+      action: e.action,
+      outcome: e.outcome,
+      entityType: e.entityType,
+      entityId: e.entityId ?? null,
+      actorUserId: e.actorUserId ?? null,
+      organizationId: e.organizationId,
+      requestId: null,
+      causationId: e.causationId ?? null,
+      ipAddress: e.ipAddress ?? null,
+      userAgent: null,
+      metadata: e.metadata,
+      createdAt: createdAt.toISOString(),
+    })
+    previousHash = eventHash || null
+    eventHash = createHash('sha256').update(`${previousHash ?? ''}${canonicalPayload}`).digest('hex')
+    return {
+      id: sandboxAuditEventId(e.organizationId, 0),
+      action: e.action,
+      outcome: e.outcome,
+      entityType: e.entityType,
+      entityId: e.entityId,
+      actorUserId: e.actorUserId,
+      organizationId: e.organizationId,
+      ipAddress: e.ipAddress,
+      metadata: JSON.stringify(e.metadata),
+      causationId: e.causationId,
+      previousHash,
+      eventHash,
+      canonicalPayload,
+      createdAt: new Date(createdAt),
+    }
+  })
+}
