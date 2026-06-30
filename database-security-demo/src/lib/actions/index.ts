@@ -11,6 +11,7 @@ import { documentCreateSchema, adminCreateUserSchema, adminCreateOrgSchema } fro
 import { rateLimit } from '@/lib/rate-limit'
 import { assertSameOrigin, getClientIp } from '@/lib/security/request-guards'
 import { assertSystemAdmin, assertCanDeleteUser, assertCanDeleteOrganization } from '@/lib/security/admin-guards'
+import { assertCan } from '@/lib/rbac'
 import { safeWriteAuditEvent } from '@/lib/audit/writer'
 
 async function getAuthUser() {
@@ -36,6 +37,7 @@ async function guardMutation(user: { id: string }, namespace: string, limit: num
 export async function createOrganization(formData: FormData) {
   const user = await getAuthUser()
   const ip = await guardMutation(user, 'admin-org', 20, 600000)
+  assertCan(user.role as any, 'admin:organizations:create')
   assertSystemAdmin(user.role as any)
   const prisma = await getPrisma()
 
@@ -61,6 +63,7 @@ export async function createOrganization(formData: FormData) {
 export async function deleteOrganization(orgId: string) {
   const user = await getAuthUser()
   const ip = await guardMutation(user, 'admin-org', 20, 600000)
+  assertCan(user.role as any, 'admin:organizations:delete')
   assertSystemAdmin(user.role as any)
   const prisma = await getPrisma()
 
@@ -101,6 +104,7 @@ export async function deleteOrganization(orgId: string) {
 export async function createDocument(formData: FormData) {
   const user = await getAuthUser()
   const ip = await guardMutation(user, 'doc-write', 30, 600000)
+  assertCan(user.role as any, 'document:create')
   if (!user.orgId) throw new Error('No organization scope')
   const prisma = await getPrisma()
 
@@ -127,6 +131,7 @@ export async function createDocument(formData: FormData) {
 export async function deleteDocument(docId: string) {
   const user = await getAuthUser()
   const ip = await guardMutation(user, 'doc-write', 30, 600000)
+  assertCan(user.role as any, 'document:delete')
   const prisma = await getPrisma()
 
   const doc = await (prisma as any).document.findFirst({
@@ -162,12 +167,7 @@ export async function deleteDocument(docId: string) {
 // ── Audit ──
 
 export async function clearAuditLogs() {
-  const user = await getAuthUser()
-  await guardMutation(user, 'admin-audit', 10, 600000)
-  assertSystemAdmin(user.role as any)
-  const prisma = await getPrisma()
-  await (prisma as any).auditEvent.deleteMany({ where: { organizationId: user.orgId ?? undefined } })
-  revalidatePath('/audit')
+  throw new Error('Audit log clearing is disabled in demo mode. Audit logs are part of the tamper-evident security proof. Use sandbox reset to restore seed state.')
 }
 
 // ── User management ──
@@ -175,6 +175,7 @@ export async function clearAuditLogs() {
 export async function createOrgUser(formData: FormData) {
   const user = await getAuthUser()
   const ip = await guardMutation(user, 'admin-user', 20, 600000)
+  assertCan(user.role as any, 'admin:users:create')
   assertSystemAdmin(user.role as any)
   const prisma = await getPrisma()
 
@@ -211,6 +212,7 @@ export async function createOrgUser(formData: FormData) {
 export async function deleteUser(userId: string) {
   const user = await getAuthUser()
   const ip = await guardMutation(user, 'admin-user', 20, 600000)
+  assertCan(user.role as any, 'admin:users:delete')
   assertSystemAdmin(user.role as any)
   const prisma = await getPrisma()
 

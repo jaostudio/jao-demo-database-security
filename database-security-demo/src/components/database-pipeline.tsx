@@ -1,14 +1,15 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import { KeyRound, ShieldCheck, Network, Database, ClipboardCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const steps = [
-  { label: 'Auth Session', desc: 'JWT validated', icon: '🔑' },
-  { label: 'RBAC Guard', desc: 'Role checked', icon: '🛡️' },
-  { label: 'Tenant Scope', desc: 'orgId resolved', icon: '🏝️' },
-  { label: 'Turso Query', desc: 'SQL executed', icon: '🗄️' },
-  { label: 'Audit Event', desc: 'Action logged', icon: '📋' },
+  { label: 'Auth Session', desc: 'JWT validated', icon: KeyRound },
+  { label: 'RBAC Guard', desc: 'Role checked', icon: ShieldCheck },
+  { label: 'Tenant Scope', desc: 'orgId resolved', icon: Network },
+  { label: 'Turso Query', desc: 'SQL executed', icon: Database },
+  { label: 'Audit Event', desc: 'Action logged', icon: ClipboardCheck },
 ]
 
 export function DatabasePipeline() {
@@ -24,10 +25,10 @@ export function DatabasePipeline() {
           className="flex items-center gap-4 py-3"
         >
           <div className={cn(
-            'w-8 h-8 rounded-full flex items-center justify-center text-sm border shrink-0',
-            'bg-isla-glass border-isla-border',
+            'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
+            'bg-isla-glass border border-isla-border',
           )}>
-            {step.icon}
+            <step.icon className="w-4 h-4 text-isla-violet" />
           </div>
           <div className="flex-1">
             <div className="text-sm font-medium text-isla-white">{step.label}</div>

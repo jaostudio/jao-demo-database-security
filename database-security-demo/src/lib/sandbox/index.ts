@@ -3,7 +3,7 @@ import { PrismaLibSql } from '@prisma/adapter-libsql'
 import { createClient } from '@libsql/client'
 import fs from 'fs'
 import path from 'path'
-import { SANDOX_ORGANIZATIONS, sandboxUsers, SANDOX_DOCUMENTS, SANDOX_SECURITY_SETTINGS, sandboxDocId, sandboxSettingId } from './seed-data'
+import { SANDBOX_ORGANIZATIONS, sandboxUsers, SANDBOX_DOCUMENTS, SANDBOX_SECURITY_SETTINGS, sandboxDocId, sandboxSettingId } from './seed-data'
 
 let sandboxInitPromise: Promise<PrismaClient> | null = null
 
@@ -26,7 +26,7 @@ async function ensureSchema(raw: ReturnType<typeof createClient>) {
 }
 
 async function seedSandbox(raw: ReturnType<typeof createClient>) {
-  for (const org of SANDOX_ORGANIZATIONS) {
+  for (const org of SANDBOX_ORGANIZATIONS) {
     await raw.execute({
       sql: 'INSERT OR IGNORE INTO Organization (id, name, slug) VALUES (?, ?, ?)',
       args: [org.id, org.name, org.slug],
@@ -40,16 +40,16 @@ async function seedSandbox(raw: ReturnType<typeof createClient>) {
     })
   }
 
-  for (let i = 0; i < SANDOX_DOCUMENTS.length; i++) {
-    const doc = SANDOX_DOCUMENTS[i]
+  for (let i = 0; i < SANDBOX_DOCUMENTS.length; i++) {
+    const doc = SANDBOX_DOCUMENTS[i]
     await raw.execute({
       sql: 'INSERT OR IGNORE INTO Document (id, title, body, organizationId, uploadedById, updatedAt) VALUES (?, ?, ?, ?, ?, datetime(\'now\'))',
       args: [sandboxDocId(i), doc.title, doc.body, doc.orgId, doc.uploadedById],
     })
   }
 
-  for (const org of SANDOX_ORGANIZATIONS) {
-    for (const setting of SANDOX_SECURITY_SETTINGS) {
+  for (const org of SANDBOX_ORGANIZATIONS) {
+    for (const setting of SANDBOX_SECURITY_SETTINGS) {
       await raw.execute({
         sql: 'INSERT OR IGNORE INTO SecuritySetting (id, key, value, organizationId, updatedAt) VALUES (?, ?, ?, ?, datetime(\'now\'))',
         args: [sandboxSettingId(org.id, setting.key), setting.key, setting.value, org.id],

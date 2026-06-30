@@ -18,7 +18,7 @@ export const SEED_IDS = {
 
 export const PASSWORD_HASH = bcrypt.hashSync(DEMO_PASSWORD, 10)
 
-export const SANDOX_ORGANIZATIONS = [
+export const SANDBOX_ORGANIZATIONS = [
   { id: SEED_IDS.orgs.luntian, name: 'Luntian Health', slug: 'luntian-health' },
   { id: SEED_IDS.orgs.talapay, name: 'TalaPay', slug: 'talapay-cooperative' },
   { id: SEED_IDS.orgs.bayani, name: 'Bayani Freight', slug: 'bayani-freight' },
@@ -38,7 +38,7 @@ export function sandboxDocId(idx: number): string {
   return `doc_sandbox_${idx}`
 }
 
-export const SANDOX_DOCUMENTS = [
+export const SANDBOX_DOCUMENTS = [
   { title: 'Regional Clinic Access Matrix', body: 'Access permissions and security clearances for all regional clinics under Luntian Health Network. Updated Q2 2026.', orgId: SEED_IDS.orgs.luntian, uploadedById: SEED_IDS.users.jao },
   { title: 'Vendor Security Assessment', body: 'Third-party security audit results for clinical software vendors. Includes risk ratings and remediation timelines.', orgId: SEED_IDS.orgs.luntian, uploadedById: SEED_IDS.users.jao },
   { title: 'Incident Response Checklist', body: 'Step-by-step incident response procedures for data breaches, system outages, and unauthorized access events.', orgId: SEED_IDS.orgs.luntian, uploadedById: SEED_IDS.users.jao },
@@ -62,7 +62,7 @@ export function sandboxSettingId(orgId: string, key: string): string {
   return `setting_${orgId}_${key}`
 }
 
-export const SANDOX_SECURITY_SETTINGS = [
+export const SANDBOX_SECURITY_SETTINGS = [
   { key: 'mfa_enabled', value: 'true' },
   { key: 'session_timeout_minutes', value: '60' },
 ]

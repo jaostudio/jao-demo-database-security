@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SANDOX_ORGANIZATIONS, sandboxUsers, SANDOX_DOCUMENTS, SANDOX_SECURITY_SETTINGS, SEED_IDS, sandboxDocId, sandboxSettingId } from '@/lib/sandbox/seed-data'
+import { SANDBOX_ORGANIZATIONS, sandboxUsers, SANDBOX_DOCUMENTS, SANDBOX_SECURITY_SETTINGS, SEED_IDS, sandboxDocId, sandboxSettingId } from '@/lib/sandbox/seed-data'
 
 describe('sandbox seed data', () => {
   it('exports deterministic SEED_IDS', () => {
@@ -14,7 +14,7 @@ describe('sandbox seed data', () => {
   })
 
   it('has 4 organizations', () => {
-    expect(SANDOX_ORGANIZATIONS).toHaveLength(4)
+    expect(SANDBOX_ORGANIZATIONS).toHaveLength(4)
   })
 
   it('has 4 users', () => {
@@ -22,11 +22,11 @@ describe('sandbox seed data', () => {
   })
 
   it('has 17 documents', () => {
-    expect(SANDOX_DOCUMENTS).toHaveLength(17)
+    expect(SANDBOX_DOCUMENTS).toHaveLength(17)
   })
 
   it('has 2 security setting types', () => {
-    expect(SANDOX_SECURITY_SETTINGS).toHaveLength(2)
+    expect(SANDBOX_SECURITY_SETTINGS).toHaveLength(2)
   })
 
   it('generates deterministic document IDs', () => {
@@ -47,8 +47,8 @@ describe('sandbox seed data', () => {
   })
 
   it('documents reference existing org IDs', () => {
-    const orgIds = SANDOX_ORGANIZATIONS.map(o => o.id)
-    for (const doc of SANDOX_DOCUMENTS) {
+    const orgIds = SANDBOX_ORGANIZATIONS.map(o => o.id)
+    for (const doc of SANDBOX_DOCUMENTS) {
       expect(orgIds).toContain(doc.orgId)
     }
   })
