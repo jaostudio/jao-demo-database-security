@@ -16,7 +16,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
   const prisma = await getPrisma()
 
   const doc = await (prisma as any).document.findFirst({
-    where: { id, organizationId: user.orgId },
+    where: { id, organizationId: user.orgId ?? undefined },
     include: { uploadedBy: { select: { name: true } }, organization: { select: { name: true } } },
   })
 

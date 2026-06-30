@@ -14,8 +14,7 @@ CREATE TABLE IF NOT EXISTS "User" (
     "organizationId" TEXT,
     "role" TEXT NOT NULL DEFAULT 'ORG_USER',
     "image" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "User_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User"("email");
 
@@ -27,9 +26,7 @@ CREATE TABLE IF NOT EXISTS "Document" (
     "organizationId" TEXT NOT NULL,
     "uploadedById" TEXT NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" DATETIME NOT NULL,
-    CONSTRAINT "Document_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT "Document_uploadedById_fkey" FOREIGN KEY ("uploadedById") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+    "updatedAt" DATETIME NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "AuditEvent" (
@@ -46,8 +43,7 @@ CREATE TABLE IF NOT EXISTS "AuditEvent" (
     "previousHash" TEXT,
     "eventHash" TEXT,
     "canonicalPayload" TEXT,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "AuditEvent_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS "AuditEvent_organizationId_createdAt_idx" ON "AuditEvent"("organizationId", "createdAt");
 CREATE INDEX IF NOT EXISTS "AuditEvent_organizationId_eventHash_idx" ON "AuditEvent"("organizationId", "eventHash");

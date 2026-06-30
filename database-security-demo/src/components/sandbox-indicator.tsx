@@ -11,7 +11,8 @@ export function SandboxIndicator() {
     if (!window.confirm('Reset all demo data to its initial state?')) return
     setResetting(true)
     try {
-      await fetch('/api/sandbox/reset', { method: 'POST' })
+      const res = await fetch('/api/sandbox/reset', { method: 'POST' })
+      if (!res.ok) { console.warn('Reset returned', res.status); setResetting(false); return }
       window.location.reload()
     } catch {
       setResetting(false)

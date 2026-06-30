@@ -29,8 +29,13 @@ export async function POST() {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
   }
 
-  await resetSandbox()
-  await initSandbox()
+  try {
+    await resetSandbox()
+    await initSandbox()
+  } catch (e) {
+    console.error('[sandbox.reset]', e)
+    return NextResponse.json({ error: 'reset_failed' }, { status: 500 })
+  }
 
   return NextResponse.json({ ok: true, message: 'Sandbox data has been reset' })
 }

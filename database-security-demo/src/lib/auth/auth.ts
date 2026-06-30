@@ -110,9 +110,13 @@ export const authOptions: NextAuthOptions = {
         t.email = user.email
 
         if (t.orgId) {
-          const db = await getPrisma()
-          const org = await (db as any).organization.findUnique({ where: { id: t.orgId as string }, select: { name: true } })
-          t.orgName = org?.name ?? null
+          try {
+            const db = await getPrisma()
+            const org = await (db as any).organization.findUnique({ where: { id: t.orgId as string }, select: { name: true } })
+            t.orgName = org?.name ?? null
+          } catch {
+            t.orgName = null
+          }
         }
       }
       return token

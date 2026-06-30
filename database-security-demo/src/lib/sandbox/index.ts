@@ -82,8 +82,11 @@ export async function initSandbox(): Promise<PrismaClient> {
       raw.close()
     }
 
+    const g = globalThis as unknown as { sandboxPrisma?: PrismaClient }
     const adapter = new PrismaLibSql({ url: `file:${dbPath}` })
-    return new PrismaClient({ adapter })
+    const client = new PrismaClient({ adapter })
+    g.sandboxPrisma = client
+    return client
   })()
 
   return sandboxInitPromise

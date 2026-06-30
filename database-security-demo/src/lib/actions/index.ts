@@ -11,7 +11,7 @@ import { documentCreateSchema, adminCreateUserSchema, adminCreateOrgSchema } fro
 import { rateLimit } from '@/lib/rate-limit'
 import { assertSameOrigin, getClientIp } from '@/lib/security/request-guards'
 import { assertSystemAdmin, assertCanDeleteUser, assertCanDeleteOrganization } from '@/lib/security/admin-guards'
-import { writeAuditEvent } from '@/lib/audit/writer'
+import { safeWriteAuditEvent } from '@/lib/audit/writer'
 
 async function getAuthUser() {
   const session = await getServerSession(authOptions)
@@ -43,9 +43,9 @@ export async function createOrganization(formData: FormData) {
   if (!parsed.success) throw new Error('Validation failed')
 
   const { name } = parsed.data
-  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'org'
   const org = await (prisma as any).organization.create({ data: { name, slug } })
-  await writeAuditEvent({
+  await safeWriteAuditEvent({
     action: AuditActions.ADMIN_ORGANIZATION_CREATED,
     outcome: 'SUCCESS',
     entityType: 'organization',
@@ -70,7 +70,7 @@ export async function deleteOrganization(orgId: string) {
   try {
     assertCanDeleteOrganization({ userCount, documentCount: docCount })
   } catch (e) {
-    await writeAuditEvent({
+    await safeWriteAuditEvent({
       action: AuditActions.ADMIN_ACTION_DENIED,
       outcome: 'DENIED',
       entityType: 'organization',
@@ -83,7 +83,7 @@ export async function deleteOrganization(orgId: string) {
     throw e
   }
 
-  await writeAuditEvent({
+  await safeWriteAuditEvent({
     action: AuditActions.ADMIN_ORGANIZATION_DELETED,
     outcome: 'SUCCESS',
     entityType: 'organization',
@@ -101,6 +101,7 @@ export async function deleteOrganization(orgId: string) {
 export async function createDocument(formData: FormData) {
   const user = await getAuthUser()
   const ip = await guardMutation(user, 'doc-write', 30, 600000)
+  if (!user.orgId) throw new Error('No organization scope')
   const prisma = await getPrisma()
 
   const parsed = documentCreateSchema.safeParse({ title: formData.get('title') ?? '', body: formData.get('body') ?? '' })
@@ -110,7 +111,7 @@ export async function createDocument(formData: FormData) {
   const doc = await (prisma as any).document.create({
     data: { title, body, organizationId: user.orgId, uploadedById: user.id },
   })
-  await writeAuditEvent({
+  await safeWriteAuditEvent({
     action: AuditActions.DOCUMENT_CREATED,
     outcome: 'SUCCESS',
     entityType: 'document',
@@ -129,10 +130,10 @@ export async function deleteDocument(docId: string) {
   const prisma = await getPrisma()
 
   const doc = await (prisma as any).document.findFirst({
-    where: { id: docId, organizationId: user.orgId },
+    where: { id: docId, organizationId: user.orgId ?? undefined },
   })
   if (!doc) {
-    await writeAuditEvent({
+    await safeWriteAuditEvent({
       action: AuditActions.DOCUMENT_CROSS_TENANT_DENIED,
       outcome: 'DENIED',
       entityType: 'document',
@@ -144,7 +145,7 @@ export async function deleteDocument(docId: string) {
     throw new Error('Not found')
   }
 
-  await writeAuditEvent({
+  await safeWriteAuditEvent({
     action: AuditActions.DOCUMENT_DELETED,
     outcome: 'SUCCESS',
     entityType: 'document',
@@ -194,7 +195,7 @@ export async function createOrgUser(formData: FormData) {
   const newUser = await (prisma as any).user.create({
     data: { name, email, password, role, organizationId: orgId || null },
   })
-  await writeAuditEvent({
+  await safeWriteAuditEvent({
     action: AuditActions.ADMIN_USER_CREATED,
     outcome: 'SUCCESS',
     entityType: 'user',
@@ -226,7 +227,7 @@ export async function deleteUser(userId: string) {
       systemAdminCount: adminCount,
     })
   } catch (e) {
-    await writeAuditEvent({
+    await safeWriteAuditEvent({
       action: AuditActions.ADMIN_ACTION_DENIED,
       outcome: 'DENIED',
       entityType: 'user',
@@ -240,7 +241,7 @@ export async function deleteUser(userId: string) {
   }
 
   await (prisma as any).user.delete({ where: { id: userId } })
-  await writeAuditEvent({
+  await safeWriteAuditEvent({
     action: AuditActions.ADMIN_USER_DELETED,
     outcome: 'SUCCESS',
     entityType: 'user',
