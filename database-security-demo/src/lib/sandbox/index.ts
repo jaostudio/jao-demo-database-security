@@ -59,26 +59,27 @@ async function seedSandbox(raw: ReturnType<typeof createClient>) {
 }
 
 export async function initSandbox(): Promise<PrismaClient> {
+  const dbPath = sandboxDbPath()
+  if (fs.existsSync(dbPath)) {
+    try {
+      const raw = createClient({ url: `file:${dbPath}` })
+      await raw.execute(`ALTER TABLE "Organization" ADD COLUMN "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`)
+      raw.close()
+    } catch {
+      // column already exists — ignore
+    }
+  }
+
   if (sandboxInitPromise) return sandboxInitPromise
 
   sandboxInitPromise = (async () => {
     const dir = sandboxDir()
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
 
-    const dbPath = sandboxDbPath()
-
     if (!fs.existsSync(dbPath)) {
       const raw = createClient({ url: `file:${dbPath}` })
       await ensureSchema(raw)
       await seedSandbox(raw)
-      raw.close()
-    } else {
-      const raw = createClient({ url: `file:${dbPath}` })
-      try {
-        await raw.execute(`ALTER TABLE "Organization" ADD COLUMN "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`)
-      } catch {
-        // column already exists — ignore
-      }
       raw.close()
     }
 
