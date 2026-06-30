@@ -72,6 +72,14 @@ export async function initSandbox(): Promise<PrismaClient> {
       await ensureSchema(raw)
       await seedSandbox(raw)
       raw.close()
+    } else {
+      const raw = createClient({ url: `file:${dbPath}` })
+      try {
+        await raw.execute(`ALTER TABLE "Organization" ADD COLUMN "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`)
+      } catch {
+        // column already exists — ignore
+      }
+      raw.close()
     }
 
     const adapter = new PrismaLibSql({ url: `file:${dbPath}` })
